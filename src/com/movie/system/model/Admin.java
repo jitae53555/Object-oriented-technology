@@ -20,8 +20,22 @@ public class Admin extends Person {
         return false;
     }
 
-    // 관리자 전용 기능 (예: 영화 추가)
-    public void addMovie(Movie movie) {
-        System.out.println("[관리자] 새로운 영화를 추가했습니다: " + movie.getTitle());
+    // 관리자 전용 기능 1: 영화 교체
+    public String replaceMovie(String newTitle) {
+        System.out.println("[관리자] 영화를 [" + newTitle + "]로 교체하였습니다.");
+        return newTitle;
+    }
+
+    // 관리자 전용 기능 2: 경품 추첨
+    public void drawLottery(java.util.List<String> reviews) {
+        if (reviews.isEmpty()) {
+            System.out.println("[알림] 아직 작성된 후기가 없어 추첨할 수 없습니다.");
+        } else {
+            java.util.Random rnd = new java.util.Random();
+            String winner = reviews.get(rnd.nextInt(reviews.size()));
+            System.out.println("\n=== 🎉 후기 경품 추첨 결과! ===");
+            System.out.println("당첨된 후기: " + winner);
+            System.out.println("===============================");
+        }
     }
 }

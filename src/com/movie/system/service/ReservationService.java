@@ -6,6 +6,7 @@ import java.util.List;
 
 public class ReservationService {
     private List<Ticket> reservations = new ArrayList<>();
+    private List<String> reviewList = new ArrayList<>(); // 후기 저장소
 
     // 예매하기
     public void reserveTicket(Ticket ticket) {
@@ -19,5 +20,15 @@ public class ReservationService {
         for (Ticket t : reservations) {
             System.out.println(t);
         }
+    }
+
+    // 후기 추가 (학번과 함께 저장)
+    public void addReview(String studentId, String review) {
+        reviewList.add("[" + studentId + "] " + review);
+    }
+
+    // 후기 목록 가져오기
+    public List<String> getReviewList() {
+        return reviewList;
     }
 }
