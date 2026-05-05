@@ -1,0 +1,6 @@
+bin/
+oracleJdk-26/
+.settings/
+.project
+.classpath
+*.class
