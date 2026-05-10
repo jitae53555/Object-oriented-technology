@@ -2,17 +2,21 @@ package com.movie.system.main;
 
 import com.movie.system.model.*;
 import com.movie.system.service.ReservationService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+
 public class MovieSystemMain {
     public static void main(String[] args) {
-        Scanner sn = new Scanner(System.in, "UTF-8"); // 시스템 기본 인코딩
+        Scanner sn = new Scanner(System.in);
         ReservationService service = new ReservationService();
-        String currentMovie = "어벤져스"; // 초기값
+
+        // 상영 중인 영화 정보를 객체 하나로 관리합니다.
+        Movie currentMovie = new Movie("어벤져스");
 
         System.out.println("===============================");
-        System.out.println("   영화 예매 시스템 (Movie System)");
+        System.out.println("영화 예매 시스템 (Movie System)");
         System.out.println("===============================");
 
         // 1. 학번 입력받기 (로그인)
@@ -36,125 +40,208 @@ public class MovieSystemMain {
         while (running) {
             System.out.println("\n----- 메뉴 -----");
             if (currentUser instanceof Admin) {
-                System.out.println("0. 영화 정보 변경 (관리자)");
+                // 관리자용 메뉴 (1~6번)
+                System.out.println("1. 영화 제목 변경\n2. 예매 내역 확인\n3. 영화 후기 전체 보기\n4. 후기 경품 추첨\n5. 종료\n6. 전체 데이터 초기화");
+            } else {
+                // 일반 사용자용 메뉴 (1~4번)
+                System.out.println("1. 영화 예매\n2. 예매 내역 확인\n3. 영화 후기 작성\n4. 종료");
             }
-            System.out.println("1. 영화 예매");
-            System.out.println("2. 예매 내역 확인");
-            System.out.println("3. 영화 후기 작성");
-            System.out.println("4. 종료");
             System.out.print("선택: ");
-            
+
             String choice = sn.nextLine();
 
+            // 사용자가 선택한 번호에 따라 기능을 실행합니다.
             switch (choice) {
-                case "0":
+                case "1":
                     if (currentUser instanceof Admin) {
-                        System.out.println("\n[관리자 전용 메뉴]");
-                        System.out.println("1. 영화 제목 변경");
-                        System.out.println("2. 후기 경품 추첨");
-                        System.out.print("선택: ");
-                        String adminChoice = sn.nextLine();
+                        // [관리자] 영화 제목 변경
+                        System.out.println("\n[관리자] 영화 제목 변경");
+                        System.out.println("현재 영화 제목: " + currentMovie.getTitle());
+                        System.out.print("교체할 새 영화 제목 입력: ");
+                        String newTitle = sn.nextLine();
+                        currentMovie.setTitle(newTitle);
+                        System.out.println("[알림] 상영 영화가 [" + currentMovie.getTitle() + "]로 교체되었습니다.");
+                    } else {
+                        // [사용자] 영화 예매 진입 전 체크
+                        boolean alreadyReserved = false;
+                        List<Ticket> allReservations = service.getReservations();
+                        for (int i = 0; i < allReservations.size(); i++) {
+                            if (allReservations.get(i).getId().equals(currentUser.getId())) {
+                                alreadyReserved = true;
+                                break;
+                            }
+                        }
 
-                        if (adminChoice.equals("1")) {
-                            System.out.print("교체할 새 영화 제목 입력: ");
-                            String newTitle = sn.nextLine(); // 관리자가 입력한 값
-                            currentMovie = newTitle;        // 시스템 상태 업데이트
-                            System.out.println("[알림] 상영 영화가 [" + currentMovie + "]로 교체되었습니다.");
-                        } else if (adminChoice.equals("2")) {
-                            List<String> reviews = service.getReviewList();
-                            if (reviews.isEmpty()) {
-                                System.out.println("[알림] 아직 작성된 후기가 없어 추첨할 수 없습니다.");
+                        if (alreadyReserved) {
+                            System.out.println("\n[오류] 이미 예매한 내역이 있습니다. 추가 예매는 불가능합니다.");
+                            break;
+                        }
+
+                        // 예매 내역이 없는 경우에만 아래 로직 실행
+                        System.out.println("\n현재 상영 중인 영화: " + currentMovie.getTitle());
+
+                        // 좌석 배치도 출력
+                        System.out.println("\n===== 좌석 배치도 (□: 빈 좌석, ■: 예약됨) =====");
+                        System.out.print("   ");
+                        for (int c = 0; c < 5; c++)
+                            System.out.print((c + 1) + "  ");
+                        System.out.println();
+                        for (int r = 0; r < 5; r++) {
+                            System.out.print((char) ('A' + r) + "  ");
+                            for (int c = 0; c < 5; c++) {
+                                if (seats[r][c] == 0)
+                                    System.out.print("□  ");
+                                else
+                                    System.out.print("■  ");
+                            }
+                            System.out.println();
+                        }
+                        System.out.println("==============================================");
+
+                        try {
+                            System.out.print("\n예약할 좌석의 행을 입력하세요 (A~E): ");
+                            char rowChar = sn.nextLine().toUpperCase().charAt(0);
+                            int rIdx = rowChar - 'A';
+                            System.out.print("예약할 좌석의 열을 입력하세요 (1~5): ");
+                            int cIdx = Integer.parseInt(sn.nextLine()) - 1;
+
+                            if (rIdx < 0 || rIdx >= 5 || cIdx < 0 || cIdx >= 5) {
+                                System.out.println("[오류] 잘못된 좌석 위치입니다.");
+                            } else if (seats[rIdx][cIdx] == 1) {
+                                System.out.println("[오류] 이미 예약된 좌석입니다.");
                             } else {
-                                Random rnd = new Random();
-                                String winnerReview = reviews.get(rnd.nextInt(reviews.size()));
-                                System.out.println("\n=== 🎉 후기 경품 추첨 결과! ===");
-                                System.out.println("당첨된 후기: " + winnerReview);
-                                System.out.println("축하드립니다! 담당자에게 연락해 주세요.");
-                                System.out.println("===============================");
+                                // 예매 진행
+                                seats[rIdx][cIdx] = 1;
+                                String seatInfo = rowChar + String.valueOf(cIdx + 1);
+                                Ticket ticket = new Ticket(currentMovie.getTitle(), currentUser.getId(), seatInfo);
+                                service.reserveTicket(ticket);
+                                System.out.println("[완료] " + seatInfo + " 좌석 예약이 완료되었습니다.");
+                            }
+                        } catch (Exception e) {
+                            System.out.println("[오류] 입력을 확인해 주세요.");
+                        }
+                    }
+                    break;
+
+                case "2":
+                    // [공통] 예매 내역 확인
+                    System.out.println("\n--- 예매 내역 확인 ---");
+                    System.out.print("확인할 학번을 입력하세요: ");
+                    String searchId = sn.nextLine();
+
+                    boolean found = false;
+                    List<Ticket> allTickets = service.getReservations();
+                    System.out.println("\n[" + searchId + "]님의 예매 내역:");
+                    for (int i = 0; i < allTickets.size(); i++) {
+                        Ticket t = allTickets.get(i);
+                        if (t.getId().equals(searchId)) {
+                            System.out.println("- " + t.toString());
+                            found = true;
+                        }
+                    }
+                    if (!found)
+                        System.out.println("예매 내역이 없습니다.");
+                    break;
+
+                case "3":
+                    if (currentUser instanceof Admin) {
+                        // [관리자] 영화 후기 목록 보기
+                        System.out.println("\n--- [관리자] 영화 후기 목록 ---");
+                        List<String> reviews = service.getReviewList();
+                        if (reviews == null || reviews.isEmpty()) {
+                            System.out.println("[알림] 현재 등록된 후기가 하나도 없습니다.");
+                        } else {
+                            for (int i = 0; i < reviews.size(); i++) {
+                                System.out.println((i + 1) + ". " + reviews.get(i));
                             }
                         }
                     } else {
-                        System.out.println("관리자만 접근 가능한 메뉴입니다.");
+                        // [사용자] 영화 후기 작성
+                        System.out.println("\n--- 영화 후기 작성 ---");
+                        System.out.print("후기 내용을 입력해 주세요: ");
+                        String text = sn.nextLine();
+                        service.addReview(currentUser.getId(), text);
+                        System.out.println("[알림] 후기가 성공적으로 등록되었습니다.");
                     }
-                    break;
-                case "1":
-                    System.out.println("현재 상영 중인 영화: [" + currentMovie + "]");
-                    String movieTitle = currentMovie; 
-                    System.out.println("[알림] [" + movieTitle + "] 영화 예매를 진행합니다.");
-
-                    // 1. 네모 모양 좌석 배치도 출력
-                    System.out.println("\n===== 좌석 배치도 (□: 빈 좌석, ■: 예약됨) =====");
-                    System.out.print("   ");
-                    for (int c = 0; c < seats[0].length; c++) {
-                        System.out.print((c + 1) + "  ");
-                    }
-                    System.out.println();
-
-                    for (int r = 0; r < seats.length; r++) {
-                        System.out.print((char)('A' + r) + "  ");
-                        for (int c = 0; c < seats[r].length; c++) {
-                            if (seats[r][c] == 0) {
-                                System.out.print("□  ");
-                            } else {
-                                System.out.print("■  ");
-                            }
-                        }
-                        System.out.println();
-                    }
-                    System.out.println("==============================================");
-
-                    // 2. 사용자 입력 받기
-                    try {
-                        System.out.print("\n예약할 좌석의 행을 입력하세요 (A~E): ");
-                        String rowInput = sn.nextLine().toUpperCase();
-                        if (rowInput.isEmpty()) throw new Exception("행을 입력해야 합니다.");
-                        char rowChar = rowInput.charAt(0);
-                        int rIdx = rowChar - 'A';
-
-                        System.out.print("예약할 좌석의 열을 입력하세요 (1~5): ");
-                        int colInput = Integer.parseInt(sn.nextLine());
-                        int cIdx = colInput - 1;
-
-                        // 3. 입력값 검증 및 예약 처리
-                        if (rIdx < 0 || rIdx >= seats.length || cIdx < 0 || cIdx >= seats[0].length) {
-                            System.out.println("[오류] 잘못된 좌석 번호입니다. 다시 시도해주세요.");
-                        } 
-                        else if (seats[rIdx][cIdx] == 1) {
-                            System.out.println("[오류] 이미 예약된 좌석입니다. 다른 좌석을 선택해주세요.");
-                        } 
-                        else {
-                            seats[rIdx][cIdx] = 1; // 상태 업데이트
-                            String seatInfo = rowChar + String.valueOf(colInput);
-                            Ticket ticket = new Ticket(movieTitle, currentUser.getId(), seatInfo);
-                            service.reserveTicket(ticket);
-                            System.out.println("[완료] 학번 [" + currentUser.getId() + "]님, " + seatInfo + " 좌석 예약이 완료되었습니다.");
-                        }
-                    } catch (Exception e) {
-                        System.out.println("[오류] 입력 형식이 잘못되었습니다: " + e.getMessage());
-                    }
-                    break;
-                case "2":
-                    service.showAllReservations();
-                    break;
-                case "3":
-                    System.out.println("\n--- 영화 후기 작성 ---");
-                    System.out.print("후기 내용을 입력해 주세요: ");
-                    String reviewText = sn.nextLine();
-                    service.addReview(currentUser.getId(), reviewText);
-                    System.out.println("[알림] 후기가 성공적으로 등록되었습니다. 참여해 주셔서 감사합니다!");
                     break;
 
                 case "4":
-                    running = false;
-                    System.out.println("\n**********************************");
-                    System.out.println("       프로그램을 종료합니다.");
-                    System.out.println("**********************************");
-                    System.out.println("\n[안내] 영화를 다 보고 나서 후기를 작성해 주세요!");
-                    System.out.println("-> 후기 작성 선착순 10명에게 커피쿠폰 증정!");
-                    System.out.println("\n감사합니다. 좋은 하루 되세요!");
+                    if (currentUser instanceof Admin) {
+                        // [관리자] 후기 경품 추첨 (5명 뽑기)
+                        System.out.println("\n--- [관리자] 후기 경품 추첨 ---");
+                        List<String> originalReviews = service.getReviewList();
+
+                        if (originalReviews == null || originalReviews.isEmpty()) {
+                            System.out.println("[알림] 추첨할 후기가 존재하지 않습니다.");
+                        } else {
+                            // 원본을 건드리지 않기 위해 추첨용 복사본 만들기
+                            List<String> copyList = new ArrayList<>();
+                            for (int i = 0; i < originalReviews.size(); i++) {
+                                copyList.add(originalReviews.get(i));
+                            }
+
+                            Random random = new Random();
+                            // 5명을 뽑고 싶은데, 만약 후기가 5개보다 적으면 후기 개수만큼만 뽑습니다.
+                            int winnerCount = 5;
+                            if (copyList.size() < 5) {
+                                winnerCount = copyList.size();
+                            }
+
+                            System.out.println("=== 🎁 경품 당첨자 " + winnerCount + "명 발표! ===\n");
+
+                            for (int i = 0; i < winnerCount; i++) {
+                                // 남은 명단 중에서 무작위 번호 하나 선택
+                                int winnerIndex = random.nextInt(copyList.size());
+
+                                // 당첨된 사람의 학번만 추출
+                                String fullText = copyList.get(winnerIndex);
+                                String winnerId = fullText.split("]")[0].replace("[", "");
+
+                                System.out.println("- 당첨 학번: " + winnerId + "님 (커피 5000원권)");
+
+                                // 중복 당첨을 막기 위해 뽑힌 사람은 명단에서 삭제
+                                copyList.remove(winnerIndex);
+                            }
+                            System.out.println("\n=== 추첨이 모두 완료되었습니다! ===");
+                        }
+                    } else {
+                        // [사용자] 종료
+                        running = false;
+                        System.out.println("\n사용자 모드를 종료합니다. 즐거운 하루 되세요!");
+                    }
                     break;
+
+                case "5":
+                    if (currentUser instanceof Admin) {
+                        // [관리자] 종료
+                        running = false;
+                        System.out.println("\n관리자 모드를 종료합니다.");
+                    } else {
+                        System.out.println("[오류] 잘못된 선택입니다.");
+                    }
+                    break;
+
+                case "6":
+                    if (currentUser instanceof Admin) {
+                        // [관리자] 전체 데이터 초기화
+                        System.out.print("\n[주의] 정말로 모든 데이터를 초기화하시겠습니까? (y/n): ");
+                        String confirm = sn.nextLine();
+                        if (confirm.equalsIgnoreCase("y")) {
+                            service.clearData();
+                            // 좌석 정보도 초기화
+                            for (int i = 0; i < 5; i++) {
+                                for (int j = 0; j < 5; j++) {
+                                    seats[i][j] = 0;
+                                }
+                            }
+                        } else {
+                            System.out.println("[알림] 초기화가 취소되었습니다.");
+                        }
+                    }
+                    break;
+
                 default:
-                    System.out.println("잘못된 선택입니다.");
+                    System.out.println("[알림] 메뉴에 있는 번호를 입력해 주세요.");
             }
         }
         sn.close();
