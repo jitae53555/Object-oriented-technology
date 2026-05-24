@@ -11,9 +11,4 @@ public class Movie {
     // Getter & Setter
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
-
-    @Override
-    public String toString() {
-        return "영화 제목: " + title;
-    }
 }

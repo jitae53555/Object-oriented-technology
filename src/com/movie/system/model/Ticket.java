@@ -13,11 +13,8 @@ public class Ticket {
 
     // Getter & Setter
     public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
     public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
     public String getSeat() { return seat; }
-    public void setSeat(String seat) { this.seat = seat; }
 
     @Override
     public String toString() {

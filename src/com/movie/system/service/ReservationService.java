@@ -9,16 +9,16 @@ import java.util.Scanner;
 public class ReservationService {
     private List<Ticket> reservations = new ArrayList<>();
     private List<String> reviewList = new ArrayList<>(); // 후기 저장소
-    private final String FILE_PATH = "reservations.txt"; // 저장할 파일 이름
+    private final String FILE_PATH = "reservations.txt";
 
     // 생성자: 프로그램이 시작될 때 파일을 읽어옵니다.
     public ReservationService() {
         // [디버그] 파일이 실제로 어디에 저장되는지 확인용
         File f = new File(FILE_PATH);
         System.out.println("[시스템] 데이터 저장 위치: " + f.getAbsolutePath());
-        
+
         loadFromFile();
-        loadReviewsFromFile(); 
+        loadReviewsFromFile();
     }
 
     // 예매하기 (파일 저장 기능 추가)
@@ -32,7 +32,8 @@ public class ReservationService {
     private void loadFromFile() {
         try {
             File file = new File(FILE_PATH);
-            if (!file.exists()) return;
+            if (!file.exists())
+                return;
 
             Scanner s = new Scanner(file, "UTF-8");
             while (s.hasNextLine()) {
@@ -53,7 +54,8 @@ public class ReservationService {
     private void loadReviewsFromFile() {
         try {
             File file = new File("reviews.txt");
-            if (!file.exists()) return;
+            if (!file.exists())
+                return;
 
             Scanner s = new Scanner(file, "UTF-8");
             while (s.hasNextLine()) {
@@ -83,25 +85,26 @@ public class ReservationService {
         return reservations;
     }
 
-    // 전체 예매 목록 확인 (참고용)
-    public void showAllReservations() {
-        System.out.println("----- 전체 예매 목록 -----");
-        for (Ticket t : reservations) {
-            System.out.println(t);
-        }
-    }
-
     // 후기 추가 (학번과 함께 저장 + 파일에도 바로 저장)
     public void addReview(String studentId, String review) {
+        // [추가] 이미 후기를 작성한 학번인지 확인
+        for (String r : reviewList) {
+            if (r.startsWith("[" + studentId + "]")) {
+                System.out.println("[오류] 이미 후기를 작성하셨습니다. (한 사람당 하나만 가능)");
+                return;
+            }
+        }
+
         String msg = "[" + studentId + "] " + review;
         reviewList.add(msg);
-        
+
         try {
             PrintWriter pw = new PrintWriter("reviews.txt", "UTF-8");
             for (String s : reviewList) {
                 pw.println(s);
             }
             pw.close();
+            System.out.println("[알림] 후기가 성공적으로 등록되었습니다.");
         } catch (Exception e) {
             System.out.println("[오류] 후기 저장 실패: " + e.getMessage());
         }
@@ -121,11 +124,11 @@ public class ReservationService {
         // 2. 파일 비우기 (빈 파일을 새로 만드는 방식)
         try {
             PrintWriter pw1 = new PrintWriter(FILE_PATH, "UTF-8");
-            pw1.close(); // 아무것도 안 쓰고 닫으면 비워짐
-            
+            pw1.close();
+
             PrintWriter pw2 = new PrintWriter("reviews.txt", "UTF-8");
             pw2.close();
-            
+
             System.out.println("[알림] 모든 데이터가 성공적으로 초기화되었습니다.");
         } catch (Exception e) {
             System.out.println("[오류] 초기화 중 문제가 발생했습니다: " + e.getMessage());
