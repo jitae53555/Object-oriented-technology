@@ -10,8 +10,6 @@ public class Ticket {
         this.id = id;
         this.seat = seat;
     }
-
-    // Getter & Setter
     public String getTitle() { return title; }
     public String getId() { return id; }
     public String getSeat() { return seat; }

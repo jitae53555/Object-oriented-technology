@@ -4,3 +4,4 @@ oracleJdk-26/
 .project
 .classpath
 *.class
+.env
